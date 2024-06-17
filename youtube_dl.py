@@ -1,6 +1,38 @@
 import tkinter as tk
 from tkinter import *
 from customtkinter import *
+import os
+from pytube import YouTube
+
+
+def download_youtube_video(link, destination, audio_only=False):
+  """Downloads a YouTube video to the specified destination directory.
+
+  Args:
+    link: The YouTube video URL.
+    destination: The destination directory.
+    audio_only: Whether to download the audio only.
+
+  Returns:
+    The title of the downloaded video.
+  """
+
+  yt = YouTube(link)
+
+  if audio_only:
+    video = yt.streams.filter(only_audio=True).first()
+  else:
+    video = yt.streams.get_highest_resolution()
+
+  out_file = video.download(output_path=destination)
+
+  if audio_only:
+    base, ext = os.path.splitext(out_file)
+    new_file = base + '.mp3'
+    os.rename(out_file, new_file)
+
+  return yt.title
+
 
 class App:
     def __init__(self):
