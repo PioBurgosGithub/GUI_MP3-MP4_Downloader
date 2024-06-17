@@ -4,36 +4,6 @@ from customtkinter import *
 import os
 from pytube import YouTube
 
-
-def download_youtube_video(link, destination, audio_only=False):
-  """Downloads a YouTube video to the specified destination directory.
-
-  Args:
-    link: The YouTube video URL.
-    destination: The destination directory.
-    audio_only: Whether to download the audio only.
-
-  Returns:
-    The title of the downloaded video.
-  """
-
-  yt = YouTube(link)
-
-  if audio_only:
-    video = yt.streams.filter(only_audio=True).first()
-  else:
-    video = yt.streams.get_highest_resolution()
-
-  out_file = video.download(output_path=destination)
-
-  if audio_only:
-    base, ext = os.path.splitext(out_file)
-    new_file = base + '.mp3'
-    os.rename(out_file, new_file)
-
-  return yt.title
-
-
 class App:
     def __init__(self):
         self.app = Tk()
@@ -81,7 +51,7 @@ class App:
         self.create_download_button(bottom_frame)
 
     def create_url_entry(self, master):
-        url_entry = CTkEntry(
+        self.url_entry = CTkEntry(
             master, 
             width=900, 
             height=74, 
@@ -89,10 +59,10 @@ class App:
             font=("Arial", 30),
             placeholder_text="Video URL"
         )
-        url_entry.pack(pady=30, padx=30)
+        self.url_entry.pack(pady=30, padx=30)
 
     def create_folder_entry(self, master):
-        folder_entry = CTkEntry(
+        self.folder_entry = CTkEntry(
             master, 
             width=900, 
             height=74,
@@ -100,13 +70,24 @@ class App:
             font=("Arial", 30),
             placeholder_text="Folder Directory"
         )
-        folder_entry.pack(pady=(0, 30), padx=30)
+        self.folder_entry.pack(pady=(0, 30), padx=30)
 
-    def combobox_callback(self, choice):
-        print("combobox dropdown clicked:", choice)
+    def option_menu_callback(self, choice):
+        link = self.url_entry.get()
+        destination = self.folder_entry.get()
+        audio_only = choice == ".mp3 (audio format)"
+        
+        if link and destination:
+            try:
+                title = self.download_youtube_video(link, destination, audio_only)
+                print(f"Downloaded: {title}")
+            except Exception as e:
+                print(f"Error: {e}")
+        else:
+            print("Please provide both the video URL and the destination folder.")
 
     def create_options_menu(self, master):
-        options = CTkOptionMenu(
+        self.options = CTkOptionMenu(
             master=master,
             width=900, 
             height=56, 
@@ -119,12 +100,13 @@ class App:
             dropdown_font=("Arial", 30),
             state="normal",
             values=[".mp3 (audio format)", ".mp4 (video format)"],
-            command=self.combobox_callback
+            command=self.option_menu_callback
         )
-        options.pack(pady=(0, 30), padx=30)
+        self.options.pack(pady=(0, 30), padx=30)
 
     def download_button_pressed(self):
-        print("button pressed")
+        choice = self.options.get()
+        self.option_menu_callback(choice)
 
     def create_download_button(self, master):
         button = CTkButton(
@@ -139,6 +121,34 @@ class App:
             command=self.download_button_pressed
         )
         button.pack(padx=30)
+
+    def download_youtube_video(self, link, destination, audio_only=False):
+        """Downloads a YouTube video to the specified destination directory.
+
+        Args:
+            link: The YouTube video URL.
+            destination: The destination directory.
+            audio_only: Whether to download the audio only.
+
+        Returns:
+            The title of the downloaded video.
+        """
+
+        yt = YouTube(link)
+
+        if audio_only:
+            video = yt.streams.filter(only_audio=True).first()
+        else:
+            video = yt.streams.get_highest_resolution()
+
+        out_file = video.download(output_path=destination)
+
+        if audio_only:
+            base, ext = os.path.splitext(out_file)
+            new_file = base + '.mp3'
+            os.rename(out_file, new_file)
+
+        return yt.title
 
     def run(self):
         self.app.mainloop()
