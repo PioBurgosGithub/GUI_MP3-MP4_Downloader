@@ -3,6 +3,7 @@ from tkinter import *
 from customtkinter import *
 import os
 from pytube import YouTube
+from tkinter import messagebox
 
 class App:
     def __init__(self):
@@ -10,6 +11,7 @@ class App:
         self.setup_main_window()
         self.create_header_frame()
         self.create_bottom_frame()
+        self.download_choice = None  # To store user's download choice
 
     def setup_main_window(self):
         self.app.geometry("{}x{}+0+0".format(self.app.winfo_screenwidth(), self.app.winfo_screenheight()))
@@ -73,18 +75,8 @@ class App:
         self.folder_entry.pack(pady=(0, 30), padx=30)
 
     def option_menu_callback(self, choice):
-        link = self.url_entry.get()
-        destination = self.folder_entry.get()
-        audio_only = choice == ".mp3 (audio format)"
-        
-        if link and destination:
-            try:
-                title = self.download_youtube_video(link, destination, audio_only)
-                print(f"Downloaded: {title}")
-            except Exception as e:
-                print(f"Error: {e}")
-        else:
-            print("Please provide both the video URL and the destination folder.")
+        # Store the user's choice for download
+        self.download_choice = choice
 
     def create_options_menu(self, master):
         self.options = CTkOptionMenu(
@@ -105,8 +97,23 @@ class App:
         self.options.pack(pady=(0, 30), padx=30)
 
     def download_button_pressed(self):
-        choice = self.options.get()
-        self.option_menu_callback(choice)
+        if self.download_choice is None:
+            messagebox.showerror("Download Error", "Please select a download format.")
+            return
+
+        link = self.url_entry.get()
+        destination = self.folder_entry.get()
+        audio_only = self.download_choice == ".mp3 (audio format)"
+        
+        if link and destination:
+            try:
+                title = self.download_youtube_video(link, destination, audio_only)
+                messagebox.showinfo("Download Completed", f"{'Audio' if audio_only else 'Video'} Download completed successfully.")
+                print(f"Downloaded: {title}")
+            except Exception as e:
+                messagebox.showerror("Error", f"Error: {e}")
+        else:
+            messagebox.showerror("Input Error", "Please provide both the video URL and the destination folder.")
 
     def create_download_button(self, master):
         button = CTkButton(
