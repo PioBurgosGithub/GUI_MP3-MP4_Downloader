@@ -4,6 +4,7 @@ from customtkinter import *
 import os
 from pytube import YouTube
 from tkinter import messagebox
+from tkinter import filedialog
 
 class App:
     def __init__(self):
@@ -73,6 +74,23 @@ class App:
             placeholder_text="Folder Directory"
         )
         self.folder_entry.pack(pady=(0, 30), padx=30)
+
+        browse_button = CTkButton(
+            master=self.folder_entry,
+            text="Browse",
+            fg_color="#F50101",
+            font=("Arial", 30),
+            corner_radius=50,
+            hover_color="#D61D1D",
+            command=self.browse_folder
+        )
+        browse_button.place(relx=0.9, rely=0.5, anchor=tk.CENTER)
+
+    def browse_folder(self):
+        folder_selected = filedialog.askdirectory()
+        if folder_selected:
+            self.folder_entry.delete(0, END)
+            self.folder_entry.insert(0, folder_selected)
 
     def option_menu_callback(self, choice):
         # Store the user's choice for download
