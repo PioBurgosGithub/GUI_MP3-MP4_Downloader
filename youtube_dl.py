@@ -5,6 +5,7 @@ import os
 from pytube import YouTube
 from tkinter import messagebox
 from tkinter import filedialog
+import threading
 
 class App:
     def __init__(self):
@@ -124,12 +125,9 @@ class App:
         audio_only = self.download_choice == ".mp3 (audio format)"
         
         if link and destination:
-            try:
-                title = self.download_youtube_video(link, destination, audio_only)
-                messagebox.showinfo("Download Completed", f"{'Audio' if audio_only else 'Video'} Download completed successfully.")
-                print(f"Downloaded: {title}")
-            except Exception as e:
-                messagebox.showerror("Error", f"Error: {e}")
+            # Create a new thread for downloading
+            download_thread = threading.Thread(target=self.download_youtube_video, args=(link, destination, audio_only))
+            download_thread.start()
         else:
             messagebox.showerror("Input Error", "Please provide both the video URL and the destination folder.")
 
@@ -148,32 +146,48 @@ class App:
         button.pack(padx=30)
 
     def download_youtube_video(self, link, destination, audio_only=False):
-        """Downloads a YouTube video to the specified destination directory.
+        # Create a progress window
+        progress_window = Toplevel(self.app)
+        progress_window.title("Downloading...")
+        progress_window.geometry("700x150")
 
-        Args:
-            link: The YouTube video URL.
-            destination: The destination directory.
-            audio_only: Whether to download the audio only.
+        progress_label = CTkLabel(master=progress_window, text="Downloading...", font=("Arial", 20))
+        progress_label.pack(pady=10)
 
-        Returns:
-            The title of the downloaded video.
-        """
+        my_progressbar = CTkProgressBar(progress_window, orientation="horizontal",
+                                        border_width=2, 
+                                        width=650,                         
+                                        height=50,
+                                        progress_color="#F50101",
+                                        determinate_speed=.5)
+        my_progressbar.pack(pady=20)
+        my_progressbar.set(0)
 
-        yt = YouTube(link)
+        try:
+            yt = YouTube(link)
 
-        if audio_only:
-            video = yt.streams.filter(only_audio=True).first()
-        else:
-            video = yt.streams.get_highest_resolution()
+            if audio_only:
+                video = yt.streams.filter(only_audio=True).first()
+            else:
+                video = yt.streams.get_highest_resolution()
 
-        out_file = video.download(output_path=destination)
+            out_file = video.download(output_path=destination)
 
-        if audio_only:
-            base, ext = os.path.splitext(out_file)
-            new_file = base + '.mp3'
-            os.rename(out_file, new_file)
+            if audio_only:
+                base, ext = os.path.splitext(out_file)
+                new_file = base + '.mp3'
+                os.rename(out_file, new_file)
 
-        return yt.title
+            # Simulate progress
+            for i in range(101):
+                self.app.after(20, lambda value=i: my_progressbar.set(value / 100))
+                progress_window.update_idletasks()
+
+            messagebox.showinfo("Download Completed", f"{'Audio' if audio_only else 'Video'} Download completed successfully.")
+            progress_window.destroy()
+        except Exception as e:
+            progress_window.destroy()
+            messagebox.showerror("Error", f"Error: {e}")
 
     def run(self):
         self.app.mainloop()
